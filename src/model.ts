@@ -1,7 +1,4 @@
-import {
- Model
-} from "@croquet/react";
-
+import { ReactModel } from "@croquet/react";
 
 export function stof(s:string) {
   const scale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C^'];
@@ -32,7 +29,7 @@ export interface Point {
 export type ballId = number;
 export type pointerId = number;
 
-export class MusicBoxModel extends Model {
+export class MusicBoxModel extends ReactModel {
   width = 720;
   height = 480;
   wrapTime = 0;
@@ -64,7 +61,10 @@ export class MusicBoxModel extends Model {
     this.subscribe(this.id, "release", this.release);
     this.subscribe(this.id, "addBall", this.addBall);
     this.subscribe(this.id, "removeBall", this.removeBall);
-    this.subscribe(this.sessionId, "view-exit", this.deleteUser);
+  }
+
+  handleViewExit(viewId: string): void {
+    this.deleteUser(viewId)
   }
 
   deleteUser(viewId:string) {
@@ -81,7 +81,6 @@ export class MusicBoxModel extends Model {
     if (!ball) {return;}
     if (ball.grabbed) {return;}
     ball.grabbed = viewId;
-    this.publish(this.id, "grabbed", data);
   }
 
   move(data:{viewId:string, id:ballId, x:number, y:number}) {
@@ -91,8 +90,6 @@ export class MusicBoxModel extends Model {
     if (ball.grabbed !== viewId) {return;}
     ball.x = x;
     ball.y = y;
-
-    this.publish(this.id, "moved", data);
   }
 
   release(data:{viewId:string, id:ballId}) {
@@ -102,7 +99,6 @@ export class MusicBoxModel extends Model {
     if (ball.grabbed !== viewId) {return;}
     ball.grabbed = null;
     ball.x = Math.min(ball.x, this.width - BallDiameter);
-    this.publish(this.id, "released", data);
   }
 
   addBall(data:Point) {
@@ -110,7 +106,6 @@ export class MusicBoxModel extends Model {
     const x = data.x || this.width / 2;
     const y = data.y || this.width / 2;
     this.balls.set(id, {x, y, grabbed:null});
-    this.publish(this.id, "added");
   }
 
   removeBall(data:{viewId:string, id:ballId}) {
@@ -119,13 +114,11 @@ export class MusicBoxModel extends Model {
     if (!ball) {return;}
     if (ball.grabbed !== viewId) {return;}
     this.balls.delete(id);
-    this.publish(this.id, "removed");
   }
 
   wrap() {
     this.wrapTime = this.now() / 1000.0;
     this.future(2000).wrap();
-    this.publish(this.id, "wrap", this.wrapTime);
   }
 }
 
