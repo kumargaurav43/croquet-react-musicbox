@@ -1,26 +1,40 @@
 import { ReactModel } from "@croquet/react";
 
-export function stof(s:string) {
-  const scale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C^'];
+export function stof(s: string) {
+  const scale = [
+    "C",
+    "C#",
+    "D",
+    "D#",
+    "E",
+    "F",
+    "F#",
+    "G",
+    "G#",
+    "A",
+    "A#",
+    "B",
+    "C^",
+  ];
   const index = scale.indexOf(s);
   return Math.pow(1.0594630943592953, index) * 261.63;
 }
 
-export function ftop(f:number) {
+export function ftop(f: number) {
   // log_1.059 p = log p / log 1.059
 
   const p = f / 261.63;
   return Math.log(p) / Math.log(1.0594630943592953) / 12.0;
 }
 
-export function ptof(p:number) {
+export function ptof(p: number) {
   return Math.pow(1.0594630943592953, p * 12) * 261.63;
 }
 
 export const BallDiameter = 25;
 
 type viewId = string;
-export type BallData = {x:number, y:number, grabbed:viewId|null};
+export type BallData = { x: number; y: number; grabbed: viewId | null };
 
 export interface Point {
   x: number;
@@ -33,26 +47,30 @@ export class MusicBoxModel extends ReactModel {
   width = 720;
   height = 480;
   wrapTime = 0;
-  balls:Map<ballId, BallData> = new Map();
+  balls: Map<ballId, BallData> = new Map();
   currentId = 0;
   init(options: object) {
     super.init(options);
     // {x: normalizedPos, n: note}. x is normalized to [0, width - BallDiameter * 2]. f is converted to y which is with in (height - BallDiameter... 0)
     [
-      {x: 0.000, n: 'C'},
-      {x: 0.125, n: 'D'},
-      {x: 0.250, n: 'E'},
-      {x: 0.375, n: 'F'},
-      {x: 0.500, n: 'G'},
-      {x: 0.625, n: 'A'},
-      {x: 0.750, n: 'B'},
-      {x: 0.875, n: 'C^'},
+      { x: 0.0, n: "C" },
+      { x: 0.125, n: "D" },
+      { x: 0.25, n: "E" },
+      { x: 0.375, n: "F" },
+      { x: 0.5, n: "G" },
+      { x: 0.625, n: "A" },
+      { x: 0.75, n: "B" },
+      { x: 0.875, n: "C^" },
     ].forEach((obj) => {
       this.balls.set(this.currentId++, {
         x: obj.x * (this.width - BallDiameter * 2),
-        
-        y: this.height - (ftop(stof(obj.n)) * (this.height - BallDiameter * 2)) - BallDiameter * 2,
-        grabbed: null} as BallData);
+
+        y:
+          this.height -
+          ftop(stof(obj.n)) * (this.height - BallDiameter * 2) -
+          BallDiameter * 2,
+        grabbed: null,
+      } as BallData);
     });
 
     this.future(2000).wrap();
@@ -64,55 +82,71 @@ export class MusicBoxModel extends ReactModel {
   }
 
   handleViewExit(viewId: string): void {
-    this.deleteUser(viewId)
+    this.deleteUser(viewId);
   }
 
-  deleteUser(viewId:string) {
+  deleteUser(viewId: string) {
     this.balls.forEach((value, _key) => {
       if (value.grabbed === viewId) {
-          value.grabbed = null;
+        value.grabbed = null;
       }
-    })
+    });
   }
 
-  grab(data:{viewId:string, id:ballId}) {
-    const {viewId, id} = data;
+  grab(data: { viewId: string; id: ballId }) {
+    const { viewId, id } = data;
     const ball = this.balls.get(id);
-    if (!ball) {return;}
-    if (ball.grabbed) {return;}
+    if (!ball) {
+      return;
+    }
+    if (ball.grabbed) {
+      return;
+    }
     ball.grabbed = viewId;
   }
 
-  move(data:{viewId:string, id:ballId, x:number, y:number}) {
-    const {viewId, id, x, y} = data;
+  move(data: { viewId: string; id: ballId; x: number; y: number }) {
+    const { viewId, id, x, y } = data;
     const ball = this.balls.get(id);
-    if (!ball) {return;}
-    if (ball.grabbed !== viewId) {return;}
+    if (!ball) {
+      return;
+    }
+    if (ball.grabbed !== viewId) {
+      return;
+    }
     ball.x = x;
     ball.y = y;
   }
 
-  release(data:{viewId:string, id:ballId}) {
-    const {viewId, id} = data;
+  release(data: { viewId: string; id: ballId }) {
+    const { viewId, id } = data;
     const ball = this.balls.get(id);
-    if (!ball) {return;}
-    if (ball.grabbed !== viewId) {return;}
+    if (!ball) {
+      return;
+    }
+    if (ball.grabbed !== viewId) {
+      return;
+    }
     ball.grabbed = null;
     ball.x = Math.min(ball.x, this.width - BallDiameter);
   }
 
-  addBall(data:Point) {
+  addBall(data: Point) {
     const id = this.currentId++;
     const x = data.x || this.width / 2;
     const y = data.y || this.width / 2;
-    this.balls.set(id, {x, y, grabbed:null});
+    this.balls.set(id, { x, y, grabbed: null });
   }
 
-  removeBall(data:{viewId:string, id:ballId}) {
-    const {viewId, id} = data;
+  removeBall(data: { viewId: string; id: ballId }) {
+    const { viewId, id } = data;
     const ball = this.balls.get(id);
-    if (!ball) {return;}
-    if (ball.grabbed !== viewId) {return;}
+    if (!ball) {
+      return;
+    }
+    if (ball.grabbed !== viewId) {
+      return;
+    }
     this.balls.delete(id);
   }
 
